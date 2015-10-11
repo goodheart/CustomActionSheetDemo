@@ -9,7 +9,7 @@
 #import "PMActionSheet.h"
 
 #define kPMContainerViewWidthRatio 0.95
-#define kPMAnimationDuration 0.5
+#define kPMAnimationDuration 0.3
 #define kPMContainerViewCornerRadius 5
 #define kPMSpaceBetweenContentViewAndCancelButton 10
 #define kPMCancelButtonHeight 44
@@ -49,7 +49,7 @@
 #pragma mark - Life Cycle
 - (instancetype)initWithFrame:(CGRect)frame
 {
-    self = [super initWithFrame:frame];
+    self = [super initWithFrame:[UIScreen mainScreen].bounds];
     if (self) {
         _titleHeight = 0;
         _containerHeight = 0;
@@ -64,14 +64,6 @@
 }
 
 #pragma mark - Public Method
-- (id)initWithButtonCount:(NSUInteger)buttonCount withTitle:(NSString *)title{
-    if (self = [self initWithFrame:[UIScreen mainScreen].bounds]) {
-        
-    }
-    
-    return self;
-}
-
 - (void)show {
     [self initSubviews];
     UIWindow * keyWindow = [[UIApplication sharedApplication].windows firstObject];
@@ -207,8 +199,8 @@
 }
 
 - (void)initCustomView {
-    if ([self.delegate respondsToSelector:@selector(customViewForActionSheet:width:)]) {
-        self.customView = [self.delegate customViewForActionSheet:self
+    if ([self.configurationDelegate respondsToSelector:@selector(customViewForActionSheet:width:)]) {
+        self.customView = [self.configurationDelegate customViewForActionSheet:self
                                                             width:_containerWidth];
         _containerHeight += CGRectGetHeight(self.customView.bounds);
         [self.contentView addSubview:self.customView];
@@ -216,8 +208,8 @@
 }
 
 - (void)initTitleLabel {
-    if ([self.delegate respondsToSelector:@selector(titleForActionSheet:)]) {
-        self.title = [self.delegate titleForActionSheet:self];
+    if ([self.configurationDelegate respondsToSelector:@selector(titleForActionSheet:)]) {
+        self.title = [self.configurationDelegate titleForActionSheet:self];
         _titleHeight = self.title == nil ? 0 : kPMCancelButtonHeight;
         _containerHeight += _titleHeight;
     }

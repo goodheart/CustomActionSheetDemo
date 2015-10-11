@@ -9,11 +9,20 @@
 #import <UIKit/UIKit.h>
 
 @class PMActionSheet;
-@protocol PMActionSheetDelegate <NSObject>
+
+@protocol PMActionSheetConfigurationDelegate <NSObject>
+
 @required
 - (UIView *)customViewForActionSheet:(PMActionSheet *)actionSheet
                                width:(CGFloat)width;
+
+@optional
 - (NSString *)titleForActionSheet:(PMActionSheet *)actionSheet;
+
+
+@end
+
+@protocol PMActionSheetDelegate <NSObject>
 
 @optional
 - (void)actionSheetDidCancelled:(PMActionSheet *)actionSheet;
@@ -38,8 +47,8 @@
         8、将cancelButton、contentView添加到containerView上
         9、将containerView添加到self上
  */
+@property (nonatomic,weak) id<PMActionSheetConfigurationDelegate> configurationDelegate;
 @property (nonatomic,weak) id<PMActionSheetDelegate> delegate;
-- (id)initWithButtonCount:(NSUInteger)buttonCount withTitle:(NSString *)title;
 
 - (void)show;
 - (void)hide;

@@ -7,9 +7,9 @@
 //
 
 #import "SecondViewController.h"
-#import "PMActionSheet.h"
-@interface SecondViewController ()<PMActionSheetDelegate> {
-    PMActionSheet * _actionSheet;
+#import "PMShareHandler/PMShareHandler.h"
+@interface SecondViewController ()<PMShareHandlerDelegate> {
+    PMShareHandler * _shareHandler;
 }
 @end
 
@@ -19,60 +19,46 @@
     [super viewDidLoad];
     // Do any additional setup after loading the view.
     self.view.backgroundColor = [UIColor whiteColor];
-    PMActionSheet * actionSheet = [[PMActionSheet alloc] initWithButtonCount:4
-                                                            withTitle:@"分享至"];
-    actionSheet.delegate = self;
-    _actionSheet = actionSheet;
+    
+    _shareHandler = [[PMShareHandler alloc] init];
+    _shareHandler.delegate = self;
 }
 
 - (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
-    [_actionSheet show];
+    PMShareContent * shareContent = [[PMShareContent alloc] init];
+    shareContent.sharePlatformType = PMSharePlatformTypeAll;
+//    shareContent.content = @"开始测试啦";
+    shareContent.defaultContent = @"测试数据";
+    shareContent.mediaType = SSPublishContentMediaTypeNews;
+    shareContent.title = @"重大信息";
+    shareContent.url = @"http://www.baidu.com";
+    shareContent.descriptionContent = @"测试测试测试";
+    [_shareHandler shareWithContent:shareContent];
 }
 
-- (void)tapGes {
-    [_actionSheet hide];
+
+#pragma mark - PMShareHandlerDelegate
+- (void)shareHandler:(PMShareHandler *)shareHandler didCancelShareForPlatform:(NSString *)platform {
+    NSLog(@"cancel");
 }
 
-#pragma mark - PMActionSheetDelegate
-
-- (UIView *)customViewForActionSheet:(PMActionSheet *)actionSheet width:(CGFloat)width {
-    UIView * view = [[UIView alloc] init];
-    
-    for (NSUInteger index = 0; index < 5; index++) {
-        UIButton * btn = [UIButton buttonWithType:UIButtonTypeCustom];
-        btn.backgroundColor = [UIColor colorWithRed:arc4random() % 255 / 255.0
-                                              green:arc4random() % 255 / 255.0
-                                               blue:arc4random() % 255 / 255.0
-                                              alpha:1.0];
-        btn.frame = CGRectMake(0, index * 44, width, 44);
-        btn.tag = index;
-        [btn addTarget:self
-                action:@selector(btnAction:)
-      forControlEvents:UIControlEventTouchUpInside];
-        [view addSubview:btn];
-    }
-    
-    view.frame = CGRectMake(0, 0, width, 5 * 44);
-    
-    return view;
+- (void)shareHandler:(PMShareHandler *)shareHandler didShareSuccessForPlatform:(NSString *)platform {
+    NSLog(@"success");
 }
 
-- (void)btnAction:(UIButton *)sender {
-    NSLog(@"%ld",sender.tag);
-    [_actionSheet hide];
-}
-
-- (NSString *)titleForActionSheet:(PMActionSheet *)actionSheet {
-    return [NSString stringWithFormat:@"这是标题%d",arc4random() % 100];
-//    return nil;
-}
-
-- (void)actionSheetDidCancelled:(PMActionSheet *)actionSheet {
-    NSLog(@"didCancelled");
+- (void)shareHandler:(PMShareHandler *)shareHandler didShareFailForPlatform:(NSString *)platform {
+    NSLog(@"faild");
 }
 
 
 @end
+
+
+
+
+
+
+
 
 
 
