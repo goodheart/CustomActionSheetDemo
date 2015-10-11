@@ -8,18 +8,19 @@
 
 #import "PMActionSheet.h"
 
-#define kPMContainerViewHeight 400
 #define kPMContainerViewWidthRatio 0.95
 #define kPMAnimationDuration 0.5
 #define kPMContainerViewCornerRadius 5
 #define kPMSpaceBetweenContentViewAndCancelButton 10
 #define kPMCancelButtonHeight 44
-#define kPMTitleLabelHeight 30
+#define kPMTitleLabelHeight 20
 
 @interface PMActionSheet (PrivateMethod)
 
-- (void)initCustomView;
 - (void)initSubviews;
+- (void)initCustomView;
+- (void)initTitleLabel;
+- (void)initCancelButton;
 - (void)deallocSubvies;
 - (void)backgroundViewTapGesAction:(UITapGestureRecognizer *)tapGes;
 - (void)showAnimation;
@@ -30,6 +31,8 @@
 
 @interface PMActionSheet () {
     CGFloat _containerWidth;
+    CGFloat _containerHeight;
+    CGFloat _titleHeight;
 }
 
 @property (nonatomic, strong) UIView * backgroundView;
@@ -43,17 +46,27 @@
 @end
 
 @implementation PMActionSheet
+#pragma mark - Life Cycle
+- (instancetype)initWithFrame:(CGRect)frame
+{
+    self = [super initWithFrame:frame];
+    if (self) {
+        _titleHeight = 0;
+        _containerHeight = 0;
+        
+        _containerWidth = CGRectGetWidth(self.frame) * kPMContainerViewWidthRatio;
+    }
+    return self;
+}
 
 - (void)dealloc {
     [self deallocSubvies];
-    NSLog(@"dealloc");
 }
 
 #pragma mark - Public Method
 - (id)initWithButtonCount:(NSUInteger)buttonCount withTitle:(NSString *)title{
-    if (self = [super initWithFrame:[UIScreen mainScreen].bounds]) {
+    if (self = [self initWithFrame:[UIScreen mainScreen].bounds]) {
         
-        _containerWidth = CGRectGetWidth(self.frame) * kPMContainerViewWidthRatio;
     }
     
     return self;
@@ -68,6 +81,13 @@
 
 - (void)hide {
     [self hideAnimation];
+}
+
+- (void)cancel {
+    [self hideAnimation];
+    if ([self.delegate respondsToSelector:@selector(actionSheetDidCancelled:)]) {
+        [self.delegate actionSheetDidCancelled:self];
+    }
 }
 
 #pragma mark - Lazy Initializatoin
@@ -91,15 +111,10 @@
         return _containerView;
     }
     
-    CGFloat x = (CGRectGetWidth(self.bounds) * (1 - kPMContainerViewWidthRatio)) / 2;
-
-    _containerView = [[UIView alloc] initWithFrame:CGRectMake(x, CGRectGetHeight(self.bounds), _containerWidth, kPMContainerViewHeight)];
+    _containerView = [[UIView alloc] init];
     _containerView.backgroundColor = [UIColor clearColor];
     _containerView.layer.masksToBounds = YES;
     _containerView.layer.cornerRadius = kPMContainerViewCornerRadius;
-
-    [_containerView addSubview:self.contentView];
-    [_containerView addSubview:self.cancelButton];
     
     return _containerView;
 }
@@ -111,8 +126,6 @@
     
     _cancelButton = [UIButton buttonWithType:UIButtonTypeSystem];
     
-    CGRect frame = CGRectMake(0,  kPMContainerViewHeight - kPMCancelButtonHeight, _containerWidth, kPMCancelButtonHeight);
-    _cancelButton.frame = frame;
     _cancelButton.backgroundColor = [UIColor whiteColor];
     [_cancelButton setTitle:@"Cancel"
                    forState:UIControlStateNormal];
@@ -129,10 +142,8 @@
         return _contentView;
     }
     
-    _contentView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, _containerWidth, kPMContainerViewHeight - kPMCancelButtonHeight - kPMSpaceBetweenContentViewAndCancelButton)];
+    _contentView = [[UIView alloc] init];
     _contentView.backgroundColor = [UIColor whiteColor];
-    
-    [_contentView addSubview:self.titleLabel];
     
     return _contentView;
 }
@@ -142,7 +153,7 @@
         return _titleLabel;
     }
     
-    _titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, _containerWidth, kPMTitleLabelHeight)];
+    _titleLabel = [[UILabel alloc] init];
     
     _titleLabel.textAlignment = NSTextAlignmentCenter;
     _titleLabel.textColor = [UIColor blackColor];
@@ -157,6 +168,8 @@
 @implementation PMActionSheet (PrivateMethod)
 
 - (void)deallocSubvies {
+    _containerHeight = 0;
+    _titleHeight = 0;
     _backgroundView = nil;
     _containerView = nil;
     _contentView = nil;
@@ -166,33 +179,62 @@
 }
 
 - (void)initSubviews {
-    if ([self.delegate respondsToSelector:@selector(titleForActionSheet:)]) {
-        self.title = [self.delegate titleForActionSheet:self];
-    }
+//    初始化过程：
+//    1、初始化backgroundView
+        [self addSubview:self.backgroundView];
+//    2、初始化customView
+        [self initCustomView];
+//    3、初始化cancelButton
+        [self initCancelButton];
+//    4、初始化titleLabel
+        [self initTitleLabel];
+//    5、初始化containerView
+//    6、设置frame
+        self.containerView.frame = CGRectMake((CGRectGetWidth(self.bounds) - _containerWidth) / 2, CGRectGetHeight(self.bounds) - _containerHeight, _containerWidth, _containerHeight);
+        self.cancelButton.frame = CGRectMake(0, _containerHeight - kPMCancelButtonHeight, _containerWidth, kPMCancelButtonHeight);
     
-    [self addSubview:self.backgroundView];
-    [self initCustomView];
+        self.contentView.frame = CGRectMake(0, 0, _containerWidth, _containerHeight - kPMCancelButtonHeight - kPMSpaceBetweenContentViewAndCancelButton);
+        self.titleLabel.frame = CGRectMake(0, 0, CGRectGetWidth(self.contentView.frame), _titleHeight);
+        self.customView.frame = CGRectMake(0, CGRectGetMaxY(self.titleLabel.frame), CGRectGetWidth(self.contentView.frame), CGRectGetHeight(self.customView.frame));
+//    7、将titleLabel、customView添加到contentView
+    [self.contentView addSubview:self.titleLabel];
+    [self.contentView addSubview:self.customView];
+//    8、将cancelButton、contentView添加到containerView上
+    [self.containerView addSubview:self.cancelButton];
+    [self.containerView addSubview:self.contentView];
+//    9、将containerView添加到self上
     [self addSubview:self.containerView];
 }
 
 - (void)initCustomView {
-    if ([self.delegate respondsToSelector:@selector(customViewForActionSheet:bounds:)]) {
-        CGFloat height = kPMContainerViewHeight - CGRectGetHeight(self.titleLabel.bounds) - kPMCancelButtonHeight - kPMSpaceBetweenContentViewAndCancelButton;
-        self.customView = [self.delegate customViewForActionSheet:self bounds:CGRectMake(0, 0, _containerWidth, height)];
-        CGRect frame = CGRectMake(0, CGRectGetMaxY(self.titleLabel.frame), _containerWidth, height);
-        self.customView.frame = frame;
+    if ([self.delegate respondsToSelector:@selector(customViewForActionSheet:width:)]) {
+        self.customView = [self.delegate customViewForActionSheet:self
+                                                            width:_containerWidth];
+        _containerHeight += CGRectGetHeight(self.customView.bounds);
         [self.contentView addSubview:self.customView];
     }
 }
 
+- (void)initTitleLabel {
+    if ([self.delegate respondsToSelector:@selector(titleForActionSheet:)]) {
+        self.title = [self.delegate titleForActionSheet:self];
+        _titleHeight = self.title == nil ? 0 : kPMCancelButtonHeight;
+        _containerHeight += _titleHeight;
+    }
+}
+
+- (void)initCancelButton {
+    _containerHeight += kPMCancelButtonHeight + kPMSpaceBetweenContentViewAndCancelButton;
+}
+
 - (void)cancelButtonAction:(UIButton *)button {
-    [self hide];
+    [self cancel];
 }
 
 - (void)showAnimation {
     [UIView animateWithDuration:kPMAnimationDuration animations:^{
         
-        CGFloat y = CGRectGetHeight(self.bounds) - kPMContainerViewHeight;
+        CGFloat y = CGRectGetHeight(self.bounds) - _containerHeight;
         CGRect tempRect = self.containerView.frame;
         tempRect.origin.y = y;
         self.containerView.frame = tempRect;
@@ -213,16 +255,12 @@
         
         [self removeFromSuperview];
         
-        if ([self.delegate respondsToSelector:@selector(actionSheetDidCancelled:)]) {
-            [self.delegate actionSheetDidCancelled:self];
-        }
-        
         [self deallocSubvies];
     }];
 }
 
 - (void)backgroundViewTapGesAction:(UITapGestureRecognizer *)tapGes {
-    [self hide];
+    [self cancel];
 }
 
 @end

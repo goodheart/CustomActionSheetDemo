@@ -12,11 +12,12 @@
 @protocol PMActionSheetDelegate <NSObject>
 @required
 - (UIView *)customViewForActionSheet:(PMActionSheet *)actionSheet
-                              bounds:(CGRect)bounds;
+                               width:(CGFloat)width;
 - (NSString *)titleForActionSheet:(PMActionSheet *)actionSheet;
 
 @optional
 - (void)actionSheetDidCancelled:(PMActionSheet *)actionSheet;
+
 @end
 
 @interface PMActionSheet : UIView
@@ -25,11 +26,31 @@
         1、初始化
         2、展示
         3、隐藏
+        4、取消
+    初始化过程：
+        1、初始化backgroundView
+        2、初始化customView
+        3、初始化cancelButton
+        4、初始化titleLabel
+        5、初始化containerView
+        6、设置frame
+        7、将titleLabel、customView添加到contentView
+        8、将cancelButton、contentView添加到containerView上
+        9、将containerView添加到self上
  */
 @property (nonatomic,weak) id<PMActionSheetDelegate> delegate;
 - (id)initWithButtonCount:(NSUInteger)buttonCount withTitle:(NSString *)title;
 
 - (void)show;
 - (void)hide;
+- (void)cancel;
 
 @end
+
+
+
+
+
+
+
+

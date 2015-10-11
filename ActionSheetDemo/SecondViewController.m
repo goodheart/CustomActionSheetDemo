@@ -34,24 +34,44 @@
 }
 
 #pragma mark - PMActionSheetDelegate
-- (UIView *)customViewForActionSheet:(PMActionSheet *)actionSheet bounds:(CGRect)bounds {
+
+- (UIView *)customViewForActionSheet:(PMActionSheet *)actionSheet width:(CGFloat)width {
     UIView * view = [[UIView alloc] init];
-    view.backgroundColor = [UIColor colorWithRed:arc4random() % 255 / 255.0
-                                           green:arc4random() % 255 / 255.0
-                                            blue:arc4random() % 255 / 255.0
-                                           alpha:1.0];
-    UITapGestureRecognizer * tapGes = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapGes)];
-    [view addGestureRecognizer:tapGes];
+    
+    for (NSUInteger index = 0; index < 5; index++) {
+        UIButton * btn = [UIButton buttonWithType:UIButtonTypeCustom];
+        btn.backgroundColor = [UIColor colorWithRed:arc4random() % 255 / 255.0
+                                              green:arc4random() % 255 / 255.0
+                                               blue:arc4random() % 255 / 255.0
+                                              alpha:1.0];
+        btn.frame = CGRectMake(0, index * 44, width, 44);
+        btn.tag = index;
+        [btn addTarget:self
+                action:@selector(btnAction:)
+      forControlEvents:UIControlEventTouchUpInside];
+        [view addSubview:btn];
+    }
+    
+    view.frame = CGRectMake(0, 0, width, 5 * 44);
+    
     return view;
+}
+
+- (void)btnAction:(UIButton *)sender {
+    NSLog(@"%ld",sender.tag);
+    [_actionSheet hide];
 }
 
 - (NSString *)titleForActionSheet:(PMActionSheet *)actionSheet {
     return [NSString stringWithFormat:@"这是标题%d",arc4random() % 100];
+//    return nil;
 }
 
 - (void)actionSheetDidCancelled:(PMActionSheet *)actionSheet {
     NSLog(@"didCancelled");
 }
+
+
 @end
 
 
